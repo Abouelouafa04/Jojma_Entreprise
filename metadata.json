@@ -1,0 +1,5 @@
+{
+  "name": "JOJMA",
+  "description": "Plateforme de gestion de modèles 3D et Réalité Augmentée (AR)",
+  "requestFramePermissions": ["camera"]
+}
