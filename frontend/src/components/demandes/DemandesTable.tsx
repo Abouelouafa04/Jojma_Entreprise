@@ -17,7 +17,6 @@ function getStatusClasses(s?: string) {
     case 'en attente':
       return 'bg-amber-100 text-amber-800';
     case 'traite':
-    case 'traite':
       return 'bg-emerald-50 text-emerald-700';
     case 'archive':
       return 'bg-slate-100 text-slate-700';
