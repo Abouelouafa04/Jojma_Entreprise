@@ -15,7 +15,6 @@ export default function DashboardLayout() {
   };
 
   const navItems = [
-    { icon: LayoutDashboard, label: t('dashboard.overview'), path: '/dashboard' },
     { icon: RefreshCw, label: t('dashboard.conversions'), path: '/dashboard/conversions' },
     { icon: Smartphone, label: t('dashboard.ar'), path: '/dashboard/ar' },
     { icon: User, label: t('dashboard.profile'), path: '/dashboard/profile' },
@@ -26,7 +25,7 @@ export default function DashboardLayout() {
       {/* Sidebar */}
       <aside className="w-64 bg-white border-r hidden lg:flex flex-col sticky top-0 h-screen">
         <div className="p-6 border-b">
-          <Link to="/dashboard" className="flex items-center gap-2 font-bold text-2xl text-indigo-600">
+          <Link to="/dashboard/conversions" className="flex items-center gap-2 font-bold text-2xl text-indigo-600">
             <Box className="w-8 h-8" />
             <span>JOJMA</span>
           </Link>

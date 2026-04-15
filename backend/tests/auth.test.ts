@@ -2,6 +2,10 @@ import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
 import request from 'supertest';
 import app from '../src/app';
 import { sequelize } from '../src/config/database';
+import User from '../src/modules/users/user.model';
+import EmailVerificationToken from '../src/modules/users/emailVerificationToken.model';
+
+const uniqueEmail = `test+${Date.now()}@example.com`;
 
 describe('Auth API Tests', () => {
   beforeAll(async () => {
@@ -17,15 +21,12 @@ describe('Auth API Tests', () => {
     it('should register a new user successfully', async () => {
       const userData = {
         fullName: 'Test User',
-        email: 'test@example.com',
+        email: uniqueEmail,
         password: 'password123',
         confirmPassword: 'password123',
         accountType: 'creator',
         agreeToTerms: true
       };
-
-      // Mock the database and email service for testing
-      // In a real implementation, you'd use test doubles
 
       const response = await request(app)
         .post('/api/auth/register')
@@ -59,7 +60,7 @@ describe('Auth API Tests', () => {
   describe('POST /api/auth/login', () => {
     it('should login with valid credentials', async () => {
       const loginData = {
-        email: 'test@example.com',
+        email: uniqueEmail,
         password: 'password123',
         rememberMe: true
       };
@@ -91,7 +92,23 @@ describe('Auth API Tests', () => {
 
   describe('GET /api/auth/verify-email', () => {
     it('should verify email with valid token', async () => {
-      // This would require setting up a test token in the database
+      // Create a user and a verification token to simulate email verification
+      const user = await User.create({
+        fullName: 'Verify User',
+        email: `verify+${Date.now()}@example.com`,
+        password: 'password123',
+        accountType: 'creator',
+        isActive: false,
+        emailVerified: false,
+        termsAccepted: true
+      });
+
+      await EmailVerificationToken.create({
+        userId: user.id,
+        token: 'valid-test-token',
+        expiresAt: new Date(Date.now() + 1000000)
+      });
+
       const response = await request(app)
         .get('/api/auth/verify-email?token=valid-test-token')
         .expect(302); // Redirect to welcome page

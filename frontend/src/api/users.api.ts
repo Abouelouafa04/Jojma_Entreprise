@@ -41,7 +41,7 @@ export const getAllUsers = async (
   }
 ) => {
   try {
-    const response = await axiosInstance.get('/api/admin/users', {
+    const response = await axiosInstance.get('/admin/users', {
       params: {
         page,
         limit,
@@ -60,7 +60,7 @@ export const getAllUsers = async (
  */
 export const getUserById = async (userId: string) => {
   try {
-    const response = await axiosInstance.get(`/api/admin/users/${userId}`);
+    const response = await axiosInstance.get(`/admin/users/${userId}`);
     return response.data;
   } catch (error) {
     console.error('Error fetching user:', error);
@@ -73,7 +73,7 @@ export const getUserById = async (userId: string) => {
  */
 export const createUser = async (userData: CreateUserDTO) => {
   try {
-    const response = await axiosInstance.post('/api/admin/users', userData);
+    const response = await axiosInstance.post('/admin/users', userData);
     return response.data;
   } catch (error) {
     console.error('Error creating user:', error);
@@ -86,7 +86,7 @@ export const createUser = async (userData: CreateUserDTO) => {
  */
 export const updateUser = async (userId: string, userData: UpdateUserDTO) => {
   try {
-    const response = await axiosInstance.put(`/api/admin/users/${userId}`, userData);
+    const response = await axiosInstance.put(`/admin/users/${userId}`, userData);
     return response.data;
   } catch (error) {
     console.error('Error updating user:', error);
@@ -99,7 +99,7 @@ export const updateUser = async (userId: string, userData: UpdateUserDTO) => {
  */
 export const changeUserRole = async (userId: string, role: UserData['role']) => {
   try {
-    const response = await axiosInstance.put(`/api/admin/users/${userId}/role`, { role });
+    const response = await axiosInstance.put(`/admin/users/${userId}/role`, { role });
     return response.data;
   } catch (error) {
     console.error('Error changing user role:', error);
@@ -112,7 +112,7 @@ export const changeUserRole = async (userId: string, role: UserData['role']) => 
  */
 export const toggleUserStatus = async (userId: string, accountStatus: UserData['accountStatus']) => {
   try {
-    const response = await axiosInstance.put(`/api/admin/users/${userId}/status`, { accountStatus });
+    const response = await axiosInstance.put(`/admin/users/${userId}/status`, { accountStatus });
     return response.data;
   } catch (error) {
     console.error('Error toggling user status:', error);
@@ -125,7 +125,7 @@ export const toggleUserStatus = async (userId: string, accountStatus: UserData['
  */
 export const resetUserPassword = async (userId: string) => {
   try {
-    const response = await axiosInstance.post(`/api/admin/users/${userId}/reset-password`);
+    const response = await axiosInstance.post(`/admin/users/${userId}/reset-password`);
     return response.data;
   } catch (error) {
     console.error('Error resetting password:', error);
@@ -138,7 +138,7 @@ export const resetUserPassword = async (userId: string) => {
  */
 export const suspendUser = async (userId: string, reason?: string) => {
   try {
-    const response = await axiosInstance.post(`/api/admin/users/${userId}/suspend`, { reason });
+    const response = await axiosInstance.post(`/admin/users/${userId}/suspend`, { reason });
     return response.data;
   } catch (error) {
     console.error('Error suspending user:', error);
@@ -151,7 +151,7 @@ export const suspendUser = async (userId: string, reason?: string) => {
  */
 export const deleteUser = async (userId: string) => {
   try {
-    const response = await axiosInstance.delete(`/api/admin/users/${userId}`);
+    const response = await axiosInstance.delete(`/admin/users/${userId}`);
     return response.data;
   } catch (error) {
     console.error('Error deleting user:', error);
@@ -164,7 +164,7 @@ export const deleteUser = async (userId: string) => {
  */
 export const getUserActivityLogs = async (userId: string) => {
   try {
-    const response = await axiosInstance.get(`/api/admin/users/${userId}/activity-logs`);
+    const response = await axiosInstance.get(`/admin/users/${userId}/activity-logs`);
     return response.data;
   } catch (error) {
     console.error('Error fetching user activity:', error);
@@ -177,7 +177,7 @@ export const getUserActivityLogs = async (userId: string) => {
  */
 export const exportUsers = async (format: 'csv' | 'json' = 'csv') => {
   try {
-    const response = await axiosInstance.get('/api/admin/users/export', {
+    const response = await axiosInstance.get('/admin/users/export', {
       params: { format },
       responseType: format === 'csv' ? 'blob' : 'json',
     });

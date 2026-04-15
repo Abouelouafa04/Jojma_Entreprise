@@ -1,0 +1,15 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "allowJs": true,
+    "target": "ES2022",
+    "rootDir": ".",
+    "outDir": "./dist-test",
+    "noEmit": false
+  },
+  "ignoreDeprecations": "6.0",
+  "include": ["tests/**/*.ts", "src/**/*.ts"]
+}

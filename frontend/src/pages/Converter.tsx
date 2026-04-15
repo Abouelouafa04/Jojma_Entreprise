@@ -10,7 +10,7 @@ export default function Converter() {
   return (
     <div className="bg-white min-h-screen py-12 lg:py-20">
       
-      <ConversionSystem />
+      <ConversionSystem redirectToPipeline={false} />
 
       {/* Info Section */}
       <section className="mt-20 bg-[#1a3683] py-20 relative overflow-hidden">

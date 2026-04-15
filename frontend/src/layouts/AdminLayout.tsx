@@ -1,7 +1,40 @@
+import React, { useEffect, useState } from 'react';
 import { Link, Outlet, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Users, Box, HeadphonesIcon, Settings, LogOut, Home, ArrowLeft, Shield, Activity, AlertTriangle } from 'lucide-react';
 import { useLanguage } from '../utils/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
+import demandesApi from '../api/demandes.api';
+
+function UnreadBadge() {
+  const [count, setCount] = useState<number>(0);
+
+  useEffect(() => {
+    let mounted = true;
+    const fetchStats = async () => {
+      try {
+        const s = await demandesApi.getStats();
+        if (!mounted) return;
+        setCount(s?.unread ?? s?.nouvelles ?? 0);
+      } catch (err) {
+        // ignore
+      }
+    };
+
+    fetchStats();
+    const id = setInterval(fetchStats, 30000);
+    return () => {
+      mounted = false;
+      clearInterval(id);
+    };
+  }, []);
+
+  if (!count || count <= 0) return null;
+  return (
+    <span className="ml-auto inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-semibold bg-red-600 text-white">
+      {count}
+    </span>
+  );
+}
 
 /**
  * Layout for admin back-office pages.
@@ -19,10 +52,8 @@ export default function AdminLayout() {
   const navItems = [
     { icon: LayoutDashboard, label: t('admin.overview'), path: '/admin' },
     { icon: Users, label: t('admin.users'), path: '/admin/users' },
-    { icon: Box, label: t('admin.models'), path: '/admin/models' },
-    { icon: HeadphonesIcon, label: t('admin.support'), path: '/admin/support' },
-    { icon: Activity, label: t('admin.logs'), path: '/admin/logs' },
-    { icon: AlertTriangle, label: t('admin.errors'), path: '/admin/errors' },
+    { icon: Box, label: 'Demandes', path: '/admin/demandes' },
+    // Removed: Models, Support, Logs, Errors links per admin UI change
   ];
 
   return (
@@ -46,6 +77,9 @@ export default function AdminLayout() {
             >
               <item.icon className="w-5 h-5 group-hover:scale-110 transition-transform" />
               <span className="font-medium">{item.label}</span>
+              {item.path === '/admin/demandes' && (
+                <UnreadBadge />
+              )}
             </Link>
           ))}
         </nav>
@@ -53,7 +87,7 @@ export default function AdminLayout() {
         <div className="p-4 border-t space-y-2">
           {/* Bouton retour au dashboard utilisateur */}
           <Link
-            to="/dashboard"
+            to="/dashboard/conversions"
             className="group w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-gradient-to-r from-slate-500 to-slate-600 text-white shadow-md hover:shadow-slate-200 hover:shadow-lg hover:from-slate-600 hover:to-slate-700 transition-all duration-300 relative overflow-hidden"
           >
             <span className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl" />
@@ -92,7 +126,7 @@ export default function AdminLayout() {
             </button>
             {/* Bouton retour au dashboard utilisateur */}
             <Link
-              to="/dashboard"
+              to="/dashboard/conversions"
               title={t('admin.client_area')}
               className="group flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-200 text-slate-500 hover:border-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-all duration-200 text-sm font-medium"
             >

@@ -4,6 +4,7 @@ import { ContactResponse } from '../modules/contact/contact-response.model';
 import { sendContactConfirmationEmail, sendAdminNotificationEmail } from '../services/contactEmailService';
 import { sendContactResponseEmail } from '../services/contactResponseEmailService';
 import { v4 as uuidv4 } from 'uuid';
+import * as DemandesService from '../services/demandes.service';
 
 /**
  * Génère un numéro de demande unique
@@ -92,6 +93,29 @@ export async function submitContactRequest(req: Request, res: Response) {
     sendAdminNotificationEmail(emailDataForClient).catch((err) => {
       console.error('Erreur lors de l\'envoi de la notification admin:', err);
     });
+
+    // Créer une entrée 'Demande' dans la table Prisma pour qu'elle apparaisse
+    // dans le tableau de bord des demandes (admin). Ne bloque pas la réponse client.
+    (async () => {
+      try {
+        const demandePayload = {
+          type_demande: 'contact',
+          source_formulaire: 'contact_form',
+          nom: contactRequest.lastName,
+          prenom: contactRequest.firstName,
+          email: contactRequest.email,
+          telephone: contactRequest.phone,
+          sujet: `Contact - ${contactRequest.requestNumber}`,
+          message: contactRequest.message,
+          priorite: 'normale',
+        };
+
+        await DemandesService.createDemande(demandePayload);
+        console.log('✅ Demande Prisma créée à partir du formulaire contact');
+      } catch (err) {
+        console.error('Erreur lors de la création de la demande Prisma:', err);
+      }
+    })();
 
     // Réponse immédiate au client
     return res.status(201).json({

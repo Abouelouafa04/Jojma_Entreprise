@@ -6,7 +6,7 @@ import path from 'path';
 import multer from 'multer';
 import { protect } from '../middlewares/auth.middleware';
 import ConversionJob from '../modules/conversionJobs/conversionJob.model';
-import { fileURLToPath } from 'url';
+// Avoid using import.meta in tests; compute app directory from globals or cwd
 
 const router = Router();
 
@@ -15,9 +15,13 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 const PYTHON_API_URL = process.env.PYTHON_API_URL || 'http://127.0.0.1:8000';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const UPLOADS_ROOT = path.join(__dirname, '..', 'uploads');
+const appDirname = (typeof (globalThis as any).__dirname !== 'undefined')
+  ? (globalThis as any).__dirname
+  : ((typeof (globalThis as any).__filename !== 'undefined')
+    ? path.dirname((globalThis as any).__filename)
+    : path.join(process.cwd(), 'src'));
+
+const UPLOADS_ROOT = path.join(appDirname, '..', 'uploads');
 const CONVERSION_INPUT_DIR = path.join(UPLOADS_ROOT, 'conversion', 'input');
 
 function ensureDirSync(dirPath: string) {
@@ -387,6 +391,46 @@ router.get('/jobs/:id/download', protect, async (req: Request, res: Response) =>
     return res.redirect(`/outputs/${job.outputFileName}`);
   } catch (error) {
     console.error('[ConversionJob] download error:', error);
+    return res.status(500).json({ success: false, error: error instanceof Error ? error.message : 'Erreur serveur' });
+  }
+});
+
+/**
+ * DELETE /api/conversion/jobs/:id -> delete job (owner only)
+ */
+router.delete('/jobs/:id', protect, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+    if (!userId) return res.status(401).json({ success: false, error: 'Non authentifié' });
+
+    const job = await ConversionJob.findByPk(req.params.id);
+    if (!job || job.userId !== userId) return res.status(404).json({ success: false, error: 'Job introuvable' });
+
+    // Remove stored input file if exists
+    try {
+      if (job.storedInputPath && fs.existsSync(job.storedInputPath)) {
+        fs.unlinkSync(job.storedInputPath);
+      }
+    } catch (e) {
+      console.warn('[ConversionJob] failed to remove input file:', e instanceof Error ? e.message : String(e));
+    }
+
+    // Attempt to remove output file from python outputs if present
+    try {
+      if (job.outputFileName) {
+        const pythonOutputsDir = path.join(appDirname, '..', '..', 'python', 'outputs');
+        const outPath = path.join(pythonOutputsDir, job.outputFileName);
+        if (fs.existsSync(outPath)) fs.unlinkSync(outPath);
+      }
+    } catch (e) {
+      console.warn('[ConversionJob] failed to remove output file:', e instanceof Error ? e.message : String(e));
+    }
+
+    await job.destroy();
+
+    return res.json({ success: true });
+  } catch (error) {
+    console.error('[ConversionJob] delete error:', error);
     return res.status(500).json({ success: false, error: error instanceof Error ? error.message : 'Erreur serveur' });
   }
 });

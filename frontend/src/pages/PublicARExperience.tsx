@@ -38,12 +38,12 @@ export default function PublicARExperience() {
       setLoading(true);
       setError(null);
       try {
-        const res = await api.get<ExperienceResponse>(`/api/ar/view/${slug}`);
+        const res = await api.get<ExperienceResponse>(`/ar/view/${slug}`);
         const exp = res.data.data.experience as any;
         const model = exp.Model3D || exp.model || exp.Model || null;
         setTitle(model?.name || `Expérience AR • ${slug}`);
-        const file = model?.convertedFileName ? `/outputs/${model.convertedFileName}` : '';
-        setModelUrl(file ? getFileUrl(file) : '');
+        const absolute = (model as any)?.publicFileUrl || (model?.convertedFileName ? getFileUrl(`/outputs/${model.convertedFileName}`) : '');
+        setModelUrl(absolute);
       } catch (e: any) {
         setError(e?.response?.data?.message || e?.message || 'Expérience introuvable.');
       } finally {
@@ -134,4 +134,3 @@ export default function PublicARExperience() {
     </div>
   );
 }
-

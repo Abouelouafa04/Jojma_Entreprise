@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import os from 'os';
 import { protect } from '../middlewares/auth.middleware';
 import Model3D from '../modules/models3d/model3d.model';
 import ARExperience from '../modules/publicShare/experience.model';
@@ -6,6 +7,35 @@ import ARExperienceEvent from '../modules/publicShare/experienceEvent.model';
 import { Op } from 'sequelize';
 
 const router = Router();
+
+function getLocalNetworkIp() {
+  const interfaces = os.networkInterfaces();
+  for (const name of Object.keys(interfaces)) {
+    const list = interfaces[name] || [];
+    for (const iface of list) {
+      if ((iface as any).family === 'IPv4' && !(iface as any).internal) {
+        return (iface as any).address;
+      }
+    }
+  }
+  return null;
+}
+
+function buildPublicFileUrl(req: any, filePath: string) {
+  const requestHost = req.get('host') || `localhost:${process.env.PORT || 5000}`;
+  const requestScheme = req.protocol || 'http';
+  const normalizedPath = filePath.replace(/\\/g, '/');
+
+  if (requestHost.includes('localhost') || requestHost.includes('127.0.0.1')) {
+    const localIP = getLocalNetworkIp();
+    if (localIP) {
+      const port = requestHost.split(':')[1] || process.env.PORT || 5000;
+      return `http://${localIP}:${port}/${normalizedPath}`;
+    }
+  }
+
+  return `${requestScheme}://${requestHost}/${normalizedPath}`;
+}
 
 router.use(protect);
 router.use((req, res, next) => {
@@ -145,7 +175,7 @@ router.get('/library', async (req: any, res, next) => {
       const exp = expByModel.get(m.id) || null;
       const publicUrl = exp ? `${clientBase}/view/${exp.slug}` : null;
       const metrics = exp ? metricsByExp.get(exp.id) : null;
-      const fileUrl = m.convertedFileName ? `/outputs/${m.convertedFileName}` : null;
+      const fileUrl = m.convertedFileName ? buildPublicFileUrl(req, `outputs/${m.convertedFileName}`) : null;
 
       return {
         id: m.id,

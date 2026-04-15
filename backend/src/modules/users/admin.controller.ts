@@ -1,7 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import User from './user.model';
+import EmailVerificationToken from './emailVerificationToken.model';
 import bcrypt from 'bcrypt';
 import { AppError } from '../../utils/AppError';
+import { Op } from 'sequelize';
 
 /**
  * GET /api/admin/users
@@ -40,7 +42,6 @@ export const getAllUsers = async (
     }
 
     if (search) {
-      const { Op } = require('sequelize');
       whereClause[Op.or] = [
         { fullName: { [Op.like]: `%${search}%` } },
         { email: { [Op.like]: `%${search}%` } },
@@ -228,7 +229,7 @@ export const updateUser = async (
     if (email) {
       // Check if new email is already in use
       const existingUser = await User.findOne({
-        where: { email, id: { [require('sequelize').Op.ne]: userId } },
+        where: { email, id: { [Op.ne]: userId } },
       });
       if (existingUser) {
         return next(new AppError('Email already in use', 400));
@@ -440,6 +441,15 @@ export const deleteUser = async (
     const user = await User.findByPk(userId);
     if (!user) {
       return next(new AppError('User not found', 404));
+    }
+
+    // Remove dependent records that reference this user to avoid FK constraint errors
+    // Delete email verification tokens linked to the user first
+    try {
+      await EmailVerificationToken.destroy({ where: { userId } });
+    } catch (err) {
+      // Log and continue; if this fails the DB FK will still prevent deletion
+      console.warn('Warning: failed to delete email verification tokens for user', userId, err);
     }
 
     await user.destroy();

@@ -10,6 +10,15 @@ import userRouter from './routes/user.routes';
 import adminDemandesRouter from './routes/admin-demandes.routes';
 import adminUsersRouter from './routes/admin-users.routes';
 import demandesRouter from './routes/demandes.routes';
+import contactRouter from './routes/contact.routes';
+import chatRouter from './routes/chat.routes';
+import conversionRouter from './routes/conversion.routes';
+import arRouter from './routes/ar.routes';
+import arLibraryRouter from './routes/ar-library.routes';
+import arGenerationRouter from './routes/ar-generation.routes';
+import conversionRouter from './routes/conversion.routes';
+import arRouter from './routes/ar.routes.js';
+import arLibraryRouter from './routes/ar-library.routes';
 
 // Compute a reliable app directory without using `import.meta`
 // (avoids SyntaxError under CommonJS/Jest where `import.meta` is invalid).
@@ -31,10 +40,20 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Routes API (minimal set to avoid loading optional/ESM-heavy modules during tests)
 app.use('/api/auth', authRouter);
+app.use('/api/chat', chatRouter);
 app.use('/api/demandes', demandesRouter);
+app.use('/api/contact', contactRouter);
 app.use('/api/admin/demandes', adminDemandesRouter);
 app.use('/api/admin/users', adminUsersRouter);
 app.use('/api/user', userRouter);
+app.use('/api/conversion', conversionRouter);
+app.use('/api/ar', arRouter);
+app.use('/api/ar', arLibraryRouter);
+app.use('/api/ar', arGenerationRouter);
+// Conversion and AR routes
+app.use('/api/conversion', conversionRouter);
+app.use('/api/ar', arRouter);
+app.use('/api/ar', arLibraryRouter);
 
 app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
@@ -48,10 +67,10 @@ app.use('/uploads', express.static(uploadsDir, {
     res.setHeader('Access-Control-Allow-Origin', '*');
     // Allow the resource to be fetched from other origins (avoid same-origin restriction).
     res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-    if (filePath.endsWith('.glb')) {
+    if (filePath.toLowerCase().endsWith('.glb')) {
       res.setHeader('Content-Type', 'model/gltf-binary');
     }
-    if (filePath.endsWith('.usdz')) {
+    if (filePath.toLowerCase().endsWith('.usdz')) {
       res.setHeader('Content-Type', 'model/vnd.usdz+zip');
     }
   },
@@ -66,10 +85,10 @@ app.use('/outputs', express.static(pythonOutputsDir, {
     // Allow cross-origin access to converted outputs (required for mobile AR viewers).
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-    if (filePath.endsWith('.glb')) {
+    if (filePath.toLowerCase().endsWith('.glb')) {
       res.setHeader('Content-Type', 'model/gltf-binary');
     }
-    if (filePath.endsWith('.usdz')) {
+    if (filePath.toLowerCase().endsWith('.usdz')) {
       res.setHeader('Content-Type', 'model/vnd.usdz+zip');
     }
   },

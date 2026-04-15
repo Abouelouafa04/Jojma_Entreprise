@@ -37,7 +37,7 @@ function extractApiMessage(error: unknown): string {
 
 export async function getARStats(): Promise<ARStats> {
   try {
-    const res = await axiosInstance.get<{ status: 'success'; data: ARStats }>('/api/ar/stats');
+    const res = await axiosInstance.get<{ status: 'success'; data: ARStats }>('/ar/stats');
     return res.data.data;
   } catch (e) {
     throw new Error(extractApiMessage(e));
@@ -46,7 +46,7 @@ export async function getARStats(): Promise<ARStats> {
 
 export async function getARLibrary(): Promise<ARLibraryItem[]> {
   try {
-    const res = await axiosInstance.get<{ status: 'success'; data: { items: ARLibraryItem[] } }>('/api/ar/library');
+    const res = await axiosInstance.get<{ status: 'success'; data: { items: ARLibraryItem[] } }>('/ar/library');
     return res.data.data.items;
   } catch (e) {
     throw new Error(extractApiMessage(e));
@@ -55,7 +55,7 @@ export async function getARLibrary(): Promise<ARLibraryItem[]> {
 
 export async function generateExperience(modelId: string) {
   try {
-    const res = await axiosInstance.post('/api/ar/generate', { modelId });
+    const res = await axiosInstance.post('/ar/generate', { modelId });
     return res.data;
   } catch (e) {
     throw new Error(extractApiMessage(e));
@@ -64,7 +64,7 @@ export async function generateExperience(modelId: string) {
 
 export async function trackShare(slug: string) {
   try {
-    const res = await axiosInstance.post(`/api/ar/experience/${slug}/share`, {});
+    const res = await axiosInstance.post(`/ar/experience/${slug}/share`, {});
     return res.data;
   } catch (e) {
     throw new Error(extractApiMessage(e));

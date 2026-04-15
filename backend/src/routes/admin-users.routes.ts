@@ -5,6 +5,7 @@ import * as userAdminController from '../modules/users/admin.controller';
 const router = Router();
 
 // All routes require authentication and admin role
+// Enforce authentication and admin role for admin routes
 router.use(authMiddleware);
 
 /**

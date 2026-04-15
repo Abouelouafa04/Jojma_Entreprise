@@ -45,7 +45,7 @@ export const getMyProfile = async (req: any, res: Response, next: NextFunction) 
     if (!user) return next(new AppError("Vous n'êtes pas connecté.", 401));
 
     const freshUser = await User.findByPk(user.id);
-    if (!freshUser) return next(new AppError("L'utilisateur n'existe plus.", 401));
+    if (!freshUser) return next(new AppError("L'utilisateur n'existe plus.", 401, 'USER_NOT_FOUND'));
 
     res.status(200).json({
       status: 'success',
@@ -61,7 +61,7 @@ export const getMyProfile = async (req: any, res: Response, next: NextFunction) 
 export const updateMyProfile = async (req: any, res: Response, next: NextFunction) => {
   try {
     const user = req.user as User | undefined;
-    if (!user) return next(new AppError("Vous n'êtes pas connecté.", 401));
+    if (!user) return next(new AppError("Vous n'êtes pas connecté.", 401, 'NOT_AUTHENTICATED'));
 
     const parsed = updateProfileSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -71,7 +71,7 @@ export const updateMyProfile = async (req: any, res: Response, next: NextFunctio
 
     const payload = parsed.data;
     const currentUser = await User.findByPk(user.id);
-    if (!currentUser) return next(new AppError("L'utilisateur n'existe plus.", 401));
+    if (!currentUser) return next(new AppError("L'utilisateur n'existe plus.", 401, 'USER_NOT_FOUND'));
 
     if (typeof payload.fullName === 'string') {
       const normalizedFullName = payload.fullName.trim();
@@ -110,13 +110,13 @@ export const updateMyProfile = async (req: any, res: Response, next: NextFunctio
 export const updateMyPhoto = async (req: any, res: Response, next: NextFunction) => {
   try {
     const user = req.user as User | undefined;
-    if (!user) return next(new AppError("Vous n'êtes pas connecté.", 401));
+    if (!user) return next(new AppError("Vous n'êtes pas connecté.", 401, 'NOT_AUTHENTICATED'));
 
     const file = req.file as Express.Multer.File | undefined;
     if (!file) return next(new AppError('Aucun fichier reçu.', 400));
 
     const currentUser = await User.findByPk(user.id);
-    if (!currentUser) return next(new AppError("L'utilisateur n'existe plus.", 401));
+    if (!currentUser) return next(new AppError("L'utilisateur n'existe plus.", 401, 'USER_NOT_FOUND'));
 
     const urlPath = `/uploads/profile/${file.filename}`;
     currentUser.profilePhotoUrl = urlPath;
@@ -137,10 +137,10 @@ export const updateMyPhoto = async (req: any, res: Response, next: NextFunction)
 export const deleteMyAccount = async (req: any, res: Response, next: NextFunction) => {
   try {
     const user = req.user as User | undefined;
-    if (!user) return next(new AppError("Vous n'êtes pas connecté.", 401));
+    if (!user) return next(new AppError("Vous n'êtes pas connecté.", 401, 'NOT_AUTHENTICATED'));
 
     const currentUser = await User.findByPk(user.id);
-    if (!currentUser) return next(new AppError("L'utilisateur n'existe plus.", 401));
+    if (!currentUser) return next(new AppError("L'utilisateur n'existe plus.", 401, 'USER_NOT_FOUND'));
 
     // Soft-delete (désactivation + anonymisation) pour éviter les problèmes de clés étrangères.
     currentUser.isActive = false;

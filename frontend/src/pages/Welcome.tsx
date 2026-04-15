@@ -9,7 +9,7 @@ export default function Welcome() {
       icon: Upload,
       title: 'Importer mon premier modèle',
       description: 'Téléchargez et convertissez vos fichiers 3D',
-      link: '/dashboard/models',
+      link: '/dashboard/conversions',
       color: 'bg-blue-500'
     },
     {
@@ -23,7 +23,7 @@ export default function Welcome() {
       icon: BarChart3,
       title: 'Découvrir le tableau de bord',
       description: 'Explorez vos statistiques et gestion centralisée',
-      link: '/dashboard',
+      link: '/dashboard/conversions',
       color: 'bg-green-500'
     }
   ];

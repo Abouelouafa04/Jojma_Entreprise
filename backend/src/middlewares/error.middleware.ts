@@ -26,13 +26,15 @@ export const errorHandler = (err: any, req: Request, res: Response, next: NextFu
       status: err.status,
       error: err,
       message: err.message,
+      code: err.code,
       stack: err.stack
     });
   } else {
     if (err.isOperational) {
       res.status(err.statusCode).json({
         status: err.status,
-        message: err.message
+        message: err.message,
+        ...(err.code ? { code: err.code } : {})
       });
     } else {
       console.error('ERROR 💥', err);

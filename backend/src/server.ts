@@ -10,7 +10,6 @@ import "./modules/conversionJobs/conversionJob.model.ts";
 import "./modules/publicShare/experience.model.ts";
 import "./modules/publicShare/experienceEvent.model.ts";
 import path from "path";
-import { fileURLToPath } from "url";
 import express from "express";
 import app from "./app";
 import { sequelize } from "./config/database";
@@ -18,8 +17,11 @@ import { seedDatabase } from "./config/init";
 import { verifyEmailConfig } from "./services/verificationEmailService";
 
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const appDirname = (typeof (globalThis as any).__dirname !== 'undefined')
+  ? (globalThis as any).__dirname
+  : ((typeof (globalThis as any).__filename !== 'undefined')
+    ? path.dirname((globalThis as any).__filename)
+    : path.join(process.cwd(), 'src'));
 
 async function startServer() {
   const PORT: number = Number(process.env.PORT) || 5000;

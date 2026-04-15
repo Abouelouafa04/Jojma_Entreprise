@@ -22,6 +22,9 @@ EmailVerificationToken.init({
       model: 'Users',
       key: 'id'
     }
+    ,
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
   },
   token: {
     type: DataTypes.STRING,

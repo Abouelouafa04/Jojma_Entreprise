@@ -15,6 +15,7 @@ export default function ARPlatformExperience() {
   const [isUploading, setIsUploading] = useState(false);
   const [fileUrl, setFileUrl] = useState<string | null>(null);
   const [publicUrl, setPublicUrl] = useState<string | null>(null);
+  const [publicFileUrl, setPublicFileUrl] = useState<string | null>(null);
   const [recommendedLanHost, setRecommendedLanHost] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
   const [email, setEmail] = useState<string>('');
@@ -36,7 +37,9 @@ export default function ARPlatformExperience() {
     };
   }, [fileUrl]);
 
-  const apiBaseUrl = import.meta.env.VITE_API_URL || `${window.location.protocol}//${window.location.hostname}:5000/api`;
+  const apiBaseUrl = import.meta.env.VITE_API_URL 
+    ? (import.meta.env.VITE_API_URL.endsWith('/api') ? import.meta.env.VITE_API_URL : `${import.meta.env.VITE_API_URL}/api`)
+    : `http://${window.location.hostname}:5000/api`;
 
   useEffect(() => {
     let cancelled = false;
@@ -77,13 +80,16 @@ export default function ARPlatformExperience() {
       formData.append('platform', isIOS ? 'iphone' : 'android');
 
       // Persist in DB + generate ARExperience
-      const response = await api.post('/api/ar/upload-and-generate', formData, {
+      const response = await api.post('/ar/upload-and-generate', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
       if (response?.data?.status === 'success') {
         // The createExperience controller returns { experience, publicUrl }
         setPublicUrl(response.data.data.publicUrl);
+        setPublicFileUrl(response.data.data.publicFileUrl || null);
+        // Debug: expose the publicUrl returned by backend so we can verify QR target
+        console.debug('[ARPlatformExperience] upload-and-generate publicUrl =', response.data.data.publicUrl);
         setStep(2);
       } else {
         throw new Error(response?.data?.message || "Erreur inconnue");
@@ -164,10 +170,25 @@ export default function ARPlatformExperience() {
   };
 
   const getQrCodeUrl = () => {
-    if (!publicUrl) {
-      return window.location.origin;
+    // If backend returned a publicUrl for the experience, prefer using its origin
+    // so QR points to an address reachable from the phone (not the phone's localhost).
+    if (publicUrl) {
+      try {
+        const parsed = new URL(publicUrl);
+        const qrTarget = new URL('/ar/view', parsed.origin);
+        qrTarget.searchParams.set('platform', isIOS ? 'ios' : 'android');
+        // Prefer the direct public file URL (GLB / USDZ) if backend provided it.
+        qrTarget.searchParams.set('url', publicFileUrl || publicUrl);
+        console.debug('[ARPlatformExperience] QR target (from publicUrl) =', qrTarget.toString());
+        return qrTarget.toString();
+      } catch (e) {
+        // fallback to returning the absolute publicUrl if parsing fails
+        console.debug('[ARPlatformExperience] publicUrl parsing failed, returning publicUrl/publicFileUrl:', publicUrl, publicFileUrl, e);
+        return publicFileUrl || publicUrl || '';
+      }
     }
 
+    // Fallback: when no publicUrl yet, try building a LAN-accessible base if possible.
     const hostname = window.location.hostname;
     const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
     const base = (() => {
@@ -178,7 +199,8 @@ export default function ARPlatformExperience() {
 
     const qrTarget = new URL('/ar/view', base);
     qrTarget.searchParams.set('platform', isIOS ? 'ios' : 'android');
-    qrTarget.searchParams.set('url', publicUrl);
+    qrTarget.searchParams.set('url', publicFileUrl || publicUrl || '');
+    console.debug('[ARPlatformExperience] QR target (fallback) =', qrTarget.toString());
     return qrTarget.toString();
   };
 

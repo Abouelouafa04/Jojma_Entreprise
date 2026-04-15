@@ -5,13 +5,13 @@ import DashboardLayout from '../layouts/DashboardLayout';
 import AdminLayout from '../layouts/AdminLayout';
 import Home from '../pages/Home';
 import Login from '../pages/Login';
-import Dashboard from '../pages/Dashboard';
+import ForgotPassword from '../pages/ForgotPassword';
+import ResetPassword from '../pages/ResetPassword';
 import AdminDashboard from '../pages/AdminDashboard';
 import AdminUsersDashboard from '../pages/AdminUsersDashboard';
-import Admin3DModelsDashboard from '../pages/Admin3DModelsDashboard';
-import AdminSupportDashboard from '../pages/AdminSupportDashboard';
-import AdminActivityLogsDashboard from '../pages/AdminActivityLogsDashboard';
-import AdminSystemErrorsDashboard from '../pages/AdminSystemErrorsDashboard';
+import AdminDemandesDashboard from '../pages/AdminDemandesDashboard';
+// Admin pages removed: Admin3DModelsDashboard, AdminSupportDashboard,
+// AdminActivityLogsDashboard, AdminSystemErrorsDashboard
 import AdminPlatformSettingsDashboard from '../pages/AdminPlatformSettingsDashboard';
 import About from '../pages/About';
 import Converter from '../pages/Converter';
@@ -28,7 +28,6 @@ import ConversionPipeline from '../pages/ConversionPipeline';
 import Register from '../pages/Register';
 import Welcome from '../pages/Welcome';
 import Profile from '../pages/Profile';
-import ModelsManagement from '../pages/ModelsManagement';
 import ProtectedRoute from '../components/ProtectedRoute';
 
 /**
@@ -41,6 +40,8 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <Home /> },
       { path: 'login', element: <Login /> },
+        { path: 'forgot-password', element: <ForgotPassword /> },
+        { path: 'reset-password', element: <ResetPassword /> },
       { path: 'register', element: <Register /> },
       { path: 'welcome', element: <Welcome /> },
       { path: 'about', element: <About /> },
@@ -74,8 +75,7 @@ export const router = createBrowserRouter([
       </ProtectedRoute>
     ),
     children: [
-      { index: true, element: <Dashboard /> },
-      { path: 'models', element: <ModelsManagement /> },
+      { index: true, element: <Navigate to="/dashboard/conversions" replace /> },
       { path: 'conversions', element: <ConversionPipeline /> },
       { path: 'ar', element: <AR /> },
       { path: 'profile', element: <Profile /> },
@@ -91,10 +91,8 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <AdminDashboard /> },
       { path: 'users', element: <AdminUsersDashboard /> },
-      { path: 'models', element: <Admin3DModelsDashboard /> },
-      { path: 'support', element: <AdminSupportDashboard /> },
-      { path: 'logs', element: <AdminActivityLogsDashboard /> },
-      { path: 'errors', element: <AdminSystemErrorsDashboard /> },
+    { path: 'demandes', element: <AdminDemandesDashboard /> },
+      // 'models', 'support', 'logs' and 'errors' admin pages removed
       { path: 'settings', element: <AdminPlatformSettingsDashboard /> },
     ],
   },

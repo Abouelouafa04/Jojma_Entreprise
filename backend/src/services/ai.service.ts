@@ -95,9 +95,9 @@ export async function generateAssistantReply(params: {
   history: HistoryMessage[];
   language?: string;
 }) {
-  const model = process.env.OPENAI_MODEL || "gpt-4.1-mini";
+  const model = process.env.OPENAI_MODEL || "gpt-4o-mini";
 
-  const input = [
+  const messages = [
     {
       role: "system" as const,
       content: buildSystemPrompt(params.language || "fr"),
@@ -112,18 +112,50 @@ export async function generateAssistantReply(params: {
     },
   ];
 
-  const response = await openai.responses.create({
-    model,
-    input,
-  });
+  try {
+    const response = await openai.chat.completions.create({
+      model,
+      messages,
+    });
 
-  const text = response.output_text?.trim();
+    if (process.env.NODE_ENV !== 'production') {
+      try {
+        console.debug('[AI] openai response status snippet', {
+          modelUsed: model,
+          choices: Array.isArray(response.choices) ? response.choices.length : 0,
+        });
+      } catch (e) {}
+    }
 
-  if (!text) {
-    return "Je peux vous aider sur la conversion 3D, les formats, l’AR et le support JOJMA.";
+    const text = response.choices?.[0]?.message?.content?.trim();
+
+    if (!text) {
+      return "Je peux vous aider sur la conversion 3D, les formats, l’AR et le support JOJMA.";
+    }
+
+    return sanitizeAssistantReply(text);
+  } catch (err: any) {
+    // Log rich error information in development to aid debugging
+    try {
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('[AI] generateAssistantReply error:', {
+          message: err?.message,
+          name: err?.name,
+          status: err?.status || err?.response?.status,
+          responseData: err?.response?.data || err?.response || null,
+        });
+      } else {
+        console.error('[AI] generateAssistantReply error:', err?.message || err);
+      }
+    } catch (logErr) {
+      console.error('[AI] error logging failed', logErr);
+    }
+
+    // Graceful fallback: return a helpful canned reply instead of throwing
+    return (
+      "Désolé, mon assistant rencontre un problème temporaire. Je peux toujours aider sur la conversion 3D, les formats pris en charge et l'AR — souhaitez-vous poser une autre question ?"
+    );
   }
-
-  return sanitizeAssistantReply(text);
 }
 
 export function sanitizeAssistantReply(reply: string) {

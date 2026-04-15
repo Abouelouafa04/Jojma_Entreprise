@@ -39,7 +39,7 @@ function extractApiMessage(error: unknown): string {
 
 export async function getMyProfile() {
   try {
-    const res = await axiosInstance.get<ApiSuccess<{ profile: UserProfile }>>('/api/user/profile');
+    const res = await axiosInstance.get<ApiSuccess<{ profile: UserProfile }>>('/user/profile');
     return res.data.data.profile;
   } catch (error) {
     throw new Error(extractApiMessage(error));
@@ -48,7 +48,7 @@ export async function getMyProfile() {
 
 export async function updateMyProfile(payload: UpdateProfileDTO) {
   try {
-    const res = await axiosInstance.put<ApiSuccess<{ profile: UserProfile }>>('/api/user/profile', payload);
+    const res = await axiosInstance.put<ApiSuccess<{ profile: UserProfile }>>('/user/profile', payload);
     return res.data;
   } catch (error) {
     throw new Error(extractApiMessage(error));
@@ -59,7 +59,7 @@ export async function updateMyProfilePhoto(file: File) {
   try {
     const form = new FormData();
     form.append('photo', file);
-    const res = await axiosInstance.put<ApiSuccess<{ profile: UserProfile }>>('/api/user/profile/photo', form, {
+    const res = await axiosInstance.put<ApiSuccess<{ profile: UserProfile }>>('/user/profile/photo', form, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
     return res.data;
@@ -70,7 +70,7 @@ export async function updateMyProfilePhoto(file: File) {
 
 export async function deleteMyAccount() {
   try {
-    const res = await axiosInstance.delete<ApiSuccess<null>>('/api/user/account');
+    const res = await axiosInstance.delete<ApiSuccess<null>>('/user/account');
     return res.data;
   } catch (error) {
     throw new Error(extractApiMessage(error));

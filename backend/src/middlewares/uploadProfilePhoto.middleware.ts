@@ -1,13 +1,16 @@
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
-import { fileURLToPath } from 'url';
 import { AppError } from '../utils/AppError';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Compute a safe directory for profile uploads without using `import.meta`
+const appDirname = (typeof (globalThis as any).__dirname !== 'undefined')
+  ? (globalThis as any).__dirname
+  : ((typeof (globalThis as any).__filename !== 'undefined')
+    ? path.dirname((globalThis as any).__filename)
+    : path.join(process.cwd(), 'src'));
 
-const uploadDir = path.join(__dirname, '../uploads/profile');
+const uploadDir = path.join(appDirname, '..', 'uploads', 'profile');
 fs.mkdirSync(uploadDir, { recursive: true });
 
 const storage = multer.diskStorage({

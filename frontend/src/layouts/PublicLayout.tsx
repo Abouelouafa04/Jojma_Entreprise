@@ -242,7 +242,7 @@ export default function PublicLayout() {
                               Mon profil
                             </Link>
                             <Link
-                              to="/dashboard"
+                              to="/dashboard/conversions"
                               className="block px-4 py-2.5 text-sm text-slate-600 hover:text-indigo-600 hover:bg-slate-50 transition-colors"
                             >
                               Tableau de bord
@@ -370,7 +370,7 @@ export default function PublicLayout() {
                           Mon profil
                         </Link>
                         <Link
-                          to="/dashboard"
+                          to="/dashboard/conversions"
                           className="block px-2 py-2 text-base font-medium text-slate-600 hover:text-indigo-600"
                         >
                           Tableau de bord

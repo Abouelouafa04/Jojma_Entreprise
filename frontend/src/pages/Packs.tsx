@@ -36,7 +36,11 @@ export default function Packs() {
   const [submitMessage, setSubmitMessage] = useState('');
   const [requestNumber, setRequestNumber] = useState('');
 
-  const apiBaseUrl = import.meta.env.VITE_API_URL || `${window.location.protocol}//${window.location.hostname}:5000/api`;
+  // Construction plus robuste de l'URL API
+  const apiBaseUrl = import.meta.env.VITE_API_URL
+    ? (import.meta.env.VITE_API_URL.endsWith('/api') ? import.meta.env.VITE_API_URL : `${import.meta.env.VITE_API_URL}/api`)
+    : `${window.location.protocol}//${window.location.hostname}:5000/api`;
+    // Use current protocol for fallback (avoid mixed-content errors when site is served over HTTPS)
 
   const formFieldsCount = Object.keys(formData).length;
   const completedFieldsCount = (Object.values(formData) as string[]).filter((value) => value.trim() !== '').length;

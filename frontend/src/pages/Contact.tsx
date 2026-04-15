@@ -61,13 +61,23 @@ export default function Contact() {
         body: JSON.stringify(formData),
       });
 
-      const data: SubmitResponse = await response.json();
+      // Parse response safely (handle non-JSON responses)
+      let data: SubmitResponse | null = null;
+      const contentType = response.headers.get('content-type') || '';
 
-      if (response.ok && data.success) {
+      if (contentType.includes('application/json')) {
+        try {
+          data = await response.json();
+        } catch (err) {
+          console.warn('Réponse JSON invalide pour /contact/submit', err);
+        }
+      }
+
+      if (response.ok && data && data.success) {
         setSubmitStatus('success');
         setSubmitMessage(data.message);
         setRequestNumber(data.data?.requestNumber || '');
-        
+
         // Réinitialiser le formulaire après succès
         setFormData({
           firstName: '',
@@ -83,8 +93,19 @@ export default function Contact() {
           setSubmitStatus('idle');
         }, 8000);
       } else {
+        // Prefer server-provided message when available, otherwise try to read text
+        let message = data?.message;
+        if (!message) {
+          try {
+            const text = await response.text();
+            if (text) message = text;
+          } catch (err) {
+            // ignore
+          }
+        }
+
         setSubmitStatus('error');
-        setSubmitMessage(data.message || 'Une erreur est survenue. Veuillez réessayer.');
+        setSubmitMessage(message || 'Une erreur est survenue. Veuillez réessayer.');
       }
     } catch (error) {
       console.error('Erreur lors de l\'envoi:', error);

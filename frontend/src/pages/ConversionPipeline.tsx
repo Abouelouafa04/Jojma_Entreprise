@@ -9,10 +9,8 @@ import {
   Clock3,
   BarChart3,
   AlertTriangle,
-  Copy,
-  Link as LinkIcon,
 } from 'lucide-react';
-import { getFileUrl, listMyConversionJobs, retryConversionJob, ConversionJobDto } from '../api/api';
+import { getFileUrl, listMyConversionJobs, deleteConversionJob, ConversionJobDto } from '../api/api';
 import { useSearchParams } from 'react-router-dom';
 
 function computeOverview(jobs: ConversionJobDto[]) {
@@ -176,17 +174,21 @@ export default function ConversionPipeline() {
       window.open(getFileUrl(item.outputUrl), '_blank', 'noreferrer');
       return;
     }
-    if (action === 'retry') {
+    if (action === 'delete') {
+      const ok = confirm("Voulez-vous vraiment supprimer ce job ? Cette action est irréversible.");
+      if (!ok) return;
+
       try {
-        await retryConversionJob(item.id);
+        await deleteConversionJob(item.id);
+        // Optimistic UI update: remove job locally
+        setJobs((prev) => prev.filter((j) => j.id !== item.id));
+        if (expanded === item.id) setExpanded(null);
+        return;
       } catch (e) {
-        alert(e instanceof Error ? e.message : 'Erreur lors de la relance');
+        alert(e instanceof Error ? e.message : 'Erreur lors de la suppression');
       }
       return;
     }
-    if (action === 'duplicate') alert(`Dupliquer ${item.id} (à implémenter)`);
-    if (action === 'delete') alert(`Supprimer ${item.id} (à implémenter)`);
-    if (action === 'ar') alert(`Générer lien AR pour ${item.id} (à implémenter)`);
   };
 
   return (
@@ -323,10 +325,9 @@ export default function ConversionPipeline() {
                               <div><strong>Sortie:</strong> {task.outputUrl ? task.outputUrl : '—'}</div>
                             </div>
                             <div className="mt-3 flex flex-wrap gap-2">
-                              <button onClick={() => handleAction('retry', task)} className="inline-flex items-center gap-2 rounded-md border border-slate-200 px-3 py-1.5 text-xs text-slate-700"> <RefreshCw className="w-4 h-4" /> Relancer</button>
-                              <button onClick={() => handleAction('duplicate', task)} className="inline-flex items-center gap-2 rounded-md border border-slate-200 px-3 py-1.5 text-xs text-slate-700"> <Copy className="w-4 h-4" /> Dupliquer</button>
-                              <button onClick={() => handleAction('ar', task)} className="inline-flex items-center gap-2 rounded-md border border-slate-200 px-3 py-1.5 text-xs text-slate-700"> <LinkIcon className="w-4 h-4" /> Générer lien AR</button>
-                              <button onClick={() => handleAction('delete', task)} className="inline-flex items-center gap-2 rounded-md border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs text-rose-700"> <Trash2 className="w-4 h-4" /> Supprimer</button>
+                              <button onClick={() => handleAction('delete', task)} className="inline-flex items-center gap-2 text-xs text-rose-600 hover:underline">
+                                <Trash2 className="w-4 h-4" /> Supprimer
+                              </button>
                             </div>
                           </div>
                         )}

@@ -140,6 +140,13 @@ export async function chatHandler(req: Request, res: Response) {
     });
   } catch (error: any) {
     console.error("❌ chatHandler error:", error);
+    if (process.env.NODE_ENV !== 'production') {
+      try {
+        console.error('[chatHandler] request body:', JSON.stringify(req.body));
+      } catch (e) {
+        console.error('[chatHandler] failed to stringify request body:', e);
+      }
+    }
 
     return res.status(500).json({
       success: false,

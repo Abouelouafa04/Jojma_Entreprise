@@ -11,20 +11,20 @@ export const protect = async (req: any, res: Response, next: NextFunction) => {
     }
 
     if (!token) {
-      return next(new AppError('Vous n\'êtes pas connecté.', 401));
+      return next(new AppError('Vous n\'êtes pas connecté.', 401, 'NOT_AUTHENTICATED'));
     }
 
     const decoded: any = jwt.verify(token, process.env.JWT_SECRET || 'secret');
     const currentUser = await User.findByPk(decoded.id);
 
     if (!currentUser) {
-      return next(new AppError('L\'utilisateur n\'existe plus.', 401));
+      return next(new AppError('L\'utilisateur n\'existe plus.', 401, 'USER_NOT_FOUND'));
     }
 
     req.user = currentUser;
     next();
   } catch (error) {
-    next(new AppError('Token invalide ou expiré.', 401));
+    next(new AppError('Token invalide ou expiré.', 401, 'INVALID_TOKEN'));
   }
 };
 

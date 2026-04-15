@@ -5,8 +5,12 @@ import {
   ChevronUp, ChevronLeft, ChevronRight, AlertCircle, Check
 } from 'lucide-react';
 import { useLanguage } from '../utils/LanguageContext';
+import { useAuth } from '../contexts/AuthContext';
 import {
   getAllUsers,
+  getUserById,
+  createUser,
+  updateUser,
   changeUserRole,
   toggleUserStatus,
   deleteUser,
@@ -39,9 +43,18 @@ const STATUS_CONFIG = {
 
 export default function AdminUsersDashboard() {
   const { language, setLanguage, t } = useLanguage();
+  const { logout } = useAuth();
   const [users, setUsers] = useState<UserData[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<UserData[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [formFullName, setFormFullName] = useState('');
+  const [formEmail, setFormEmail] = useState('');
+  const [formPassword, setFormPassword] = useState('');
+  const [formRole, setFormRole] = useState<UserData['role']>('user');
+  const [formAccountStatus, setFormAccountStatus] = useState<UserData['accountStatus']>('active');
   const [searchTerm, setSearchTerm] = useState('');
+  const [lastActionResult, setLastActionResult] = useState<string>('');
   const [roleFilter, setRoleFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [dateFilter, setDateFilter] = useState<string>('');
@@ -51,94 +64,74 @@ export default function AdminUsersDashboard() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState('');
   const itemsPerPage = 10;
+  const [limit] = useState(itemsPerPage);
 
-  // Mock data for demo
+
+  // Fetch users from backend
+  const fetchUsers = async (page = currentPage) => {
+    setLoading(true);
+    try {
+      const res: any = await getAllUsers(page, limit, {
+        role: roleFilter || undefined,
+        status: statusFilter || undefined,
+        search: searchTerm || undefined,
+        sortBy: sortBy || undefined,
+      });
+
+      const usersData = res?.data?.users || [];
+      const pagination = res?.data?.pagination || { page: 1, limit, total: usersData.length, totalPages: 1 };
+      setUsers(usersData.map((u: any) => ({
+        id: u.id,
+        fullName: u.fullName,
+        email: u.email,
+        company: u.company || '',
+        role: u.role,
+        accountStatus: u.accountStatus || 'active',
+        createdAt: u.createdAt,
+      })));
+      setTotalUsers(pagination.total || usersData.length);
+      setCurrentPage(pagination.page || 1);
+    } catch (err) {
+      console.error('Failed to fetch users', err);
+      const e: any = err;
+      const status = e?.response?.status;
+      const code = e?.response?.data?.code;
+      const detail = e?.response?.data?.message || e?.response?.data?.detail || e?.message || 'Échec du chargement des utilisateurs.';
+
+      if (status === 401 && (code === 'USER_NOT_FOUND' || /n['’]existe plus/i.test(String(detail)))) {
+        try {
+          await logout();
+        } catch (logoutErr) {
+          console.warn('Logout failed', logoutErr);
+        }
+        try { alert("Votre session n'est plus valide : l'utilisateur lié au token n'existe plus. Vous allez être redirigé vers la page de connexion."); } catch(e) {}
+        window.location.href = '/login';
+        return;
+      }
+
+      alert(`Échec du chargement des utilisateurs: ${detail}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch on mount & when filters change
   useEffect(() => {
-    const mockUsers: UserData[] = [
-      {
-        id: '1',
-        fullName: 'Jean Dupont',
-        email: 'jean.dupont@example.com',
-        company: 'Dupont & Co',
-        role: 'admin',
-        accountStatus: 'active',
-        createdAt: '2025-01-15',
-        lastLogin: '2025-04-05',
-      },
-      {
-        id: '2',
-        fullName: 'Marie Martin',
-        email: 'marie.martin@example.com',
-        company: 'Martin Studio',
-        role: 'user',
-        accountStatus: 'active',
-        createdAt: '2025-02-20',
-        lastLogin: '2025-04-04',
-      },
-      {
-        id: '3',
-        fullName: 'Pierre Bernard',
-        email: 'pierre.bernard@example.com',
-        company: 'Tech Solutions',
-        role: 'gestionnaire-technique',
-        accountStatus: 'active',
-        createdAt: '2025-03-10',
-        lastLogin: '2025-04-03',
-      },
-      {
-        id: '4',
-        fullName: 'Sophie Leclerc',
-        email: 'sophie.leclerc@example.com',
-        company: 'Support Center',
-        role: 'support',
-        accountStatus: 'active',
-        createdAt: '2025-01-05',
-        lastLogin: '2025-04-02',
-      },
-      {
-        id: '5',
-        fullName: 'Luc Moreau',
-        email: 'luc.moreau@example.com',
-        company: 'Moreau Creative',
-        role: 'user',
-        accountStatus: 'inactive',
-        createdAt: '2025-02-01',
-        lastLogin: '2025-03-15',
-      },
-      {
-        id: '6',
-        fullName: 'Claire Rousseau',
-        email: 'claire.rousseau@example.com',
-        company: 'Design Pro',
-        role: 'user',
-        accountStatus: 'suspended',
-        createdAt: '2025-03-05',
-        lastLogin: '2025-03-20',
-      },
-      {
-        id: '7',
-        fullName: 'Marc Fontaine',
-        email: 'marc.fontaine@example.com',
-        company: 'Innovation Hub',
-        role: 'gestionnaire-technique',
-        accountStatus: 'active',
-        createdAt: '2025-01-20',
-        lastLogin: '2025-04-05',
-      },
-      {
-        id: '8',
-        fullName: 'Nathalie Robert',
-        email: 'nathalie.robert@example.com',
-        company: 'Robert Agency',
-        role: 'user',
-        accountStatus: 'active',
-        createdAt: '2025-02-14',
-        lastLogin: '2025-04-01',
-      },
-    ];
-    setUsers(mockUsers);
-  }, []);
+    fetchUsers(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roleFilter, statusFilter, sortBy]);
+
+  // Debounced search
+  useEffect(() => {
+    const t = setTimeout(() => {
+      fetchUsers(1);
+    }, 350);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm]);
 
   // Apply filters and sorting
   useEffect(() => {
@@ -202,38 +195,84 @@ export default function AdminUsersDashboard() {
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
-  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+  const totalPages = Math.max(1, Math.ceil(totalUsers / limit));
+
+  // When current page changes, fetch that page from backend
+  useEffect(() => {
+    fetchUsers(currentPage);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage]);
 
   const handleCreateUser = () => {
     setSelectedUser(null);
+    setFormFullName('');
+    setFormEmail('');
+    setFormPassword('');
+    setFormRole('user');
+    setFormAccountStatus('active');
     setShowCreateModal(true);
   };
 
   const handleEditUser = (user: UserData) => {
     setSelectedUser(user);
+    setFormFullName(user.fullName);
+    setFormEmail(user.email);
+    setFormPassword('');
+    setFormRole(user.role);
+    setFormAccountStatus(user.accountStatus);
     setShowEditModal(true);
   };
 
   const handleToggleUserStatus = (userId: string) => {
-    setUsers(users.map(user => 
-      user.id === userId 
-        ? { ...user, accountStatus: user.accountStatus === 'active' ? 'inactive' : 'active' }
-        : user
-    ));
+    (async () => {
+      try {
+        const u = users.find(u => u.id === userId);
+        if (!u) return;
+        const newStatus = u.accountStatus === 'active' ? 'inactive' : 'active';
+        await toggleUserStatus(userId, newStatus as any);
+        setLastActionResult(`Statut modifié: ${userId} → ${newStatus}`);
+        fetchUsers(currentPage);
+      } catch (err) {
+        console.error('Toggle status failed', err);
+        const e: any = err;
+        const detail = e?.response?.data?.message || e?.response?.data?.detail || e?.message || 'Échec de la modification du statut.';
+        setLastActionResult(`Échec toggle status: ${detail}`);
+        alert(`Échec de la modification du statut utilisateur: ${detail}`);
+      }
+    })();
   };
 
   const handleChangeUserRole = (userId: string, newRole: string) => {
-    setUsers(users.map(user =>
-      user.id === userId
-        ? { ...user, role: newRole as any }
-        : user
-    ));
+    (async () => {
+      try {
+        await changeUserRole(userId, newRole as any);
+        setLastActionResult(`Rôle modifié: ${userId} → ${newRole}`);
+        fetchUsers(currentPage);
+      } catch (err) {
+        console.error('Change role failed', err);
+        const e: any = err;
+        const detail = e?.response?.data?.message || e?.response?.data?.detail || e?.message || 'Échec du changement de rôle.';
+        setLastActionResult(`Échec change role: ${detail}`);
+        alert(`Échec du changement de rôle: ${detail}`);
+      }
+    })();
   };
 
   const handleDeleteUser = (userId: string) => {
-    if (confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?')) {
-      setUsers(users.filter(user => user.id !== userId));
-    }
+    (async () => {
+      if (!confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?')) return;
+      try {
+        await deleteUser(userId);
+        setLastActionResult(`Utilisateur supprimé: ${userId}`);
+        fetchUsers(Math.max(1, currentPage));
+      } catch (err) {
+        console.error('Delete user failed', err);
+        const e: any = err;
+        const detail = e?.response?.data?.message || e?.response?.data?.detail || e?.message || 'Échec de la suppression.';
+        setLastActionResult(`Échec suppression: ${detail}`);
+        alert(`Échec de la suppression utilisateur: ${detail}`);
+      }
+    })();
   };
 
   return (
@@ -259,7 +298,7 @@ export default function AdminUsersDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white p-4 rounded-lg border border-slate-100 shadow-sm">
           <p className="text-slate-500 text-sm font-medium">Total utilisateurs</p>
-          <p className="text-2xl font-bold text-slate-900 mt-1">{users.length}</p>
+          <p className="text-2xl font-bold text-slate-900 mt-1">{totalUsers}</p>
         </div>
         <div className="bg-white p-4 rounded-lg border border-slate-100 shadow-sm">
           <p className="text-slate-500 text-sm font-medium">Actifs</p>
@@ -509,7 +548,7 @@ export default function AdminUsersDashboard() {
         {/* Pagination */}
         <div className="px-6 py-4 border-t border-slate-200 flex items-center justify-between">
           <div className="text-sm text-slate-600">
-            Affichage {Math.max(0, (currentPage - 1) * itemsPerPage + 1)} à {Math.min(currentPage * itemsPerPage, filteredUsers.length)} sur {filteredUsers.length} utilisateurs
+            Affichage {Math.max(0, (currentPage - 1) * limit + 1)} à {Math.min(currentPage * limit, totalUsers)} sur {totalUsers} utilisateurs
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -543,16 +582,140 @@ export default function AdminUsersDashboard() {
         </div>
       </div>
 
-      {/* Create/Edit Modal (simplified for now) */}
+      {/* Create/Edit Modal */}
       {(showCreateModal || showEditModal) && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-8 w-full max-w-md">
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              if (isSubmitting) return;
+              setIsSubmitting(true);
+              setFormError('');
+              try {
+                if (showCreateModal) {
+                  if (!formPassword || formPassword.length < 6) {
+                    setFormError('Le mot de passe doit contenir au moins 6 caractères');
+                    setIsSubmitting(false);
+                    return;
+                  }
+                  await createUser({ fullName: formFullName, email: formEmail, password: formPassword, role: formRole });
+                  alert('Utilisateur créé avec succès');
+                  setShowCreateModal(false);
+                  setSelectedUser(null);
+                  fetchUsers(1);
+                } else if (selectedUser) {
+                  // Prepare patch for fields backend expects (name/email).
+                  const patch: any = {};
+                  if (formFullName !== selectedUser.fullName) patch.fullName = formFullName;
+                  if (formEmail !== selectedUser.email) patch.email = formEmail;
+
+                  // Only call updateUser if there is something to update there
+                  if (Object.keys(patch).length > 0) {
+                    await updateUser(selectedUser.id, patch);
+                  }
+
+                  // If role changed, call dedicated endpoint
+                  if (formRole !== selectedUser.role) {
+                    await changeUserRole(selectedUser.id, formRole as any);
+                  }
+
+                  // If account status changed, call dedicated endpoint
+                  if (formAccountStatus !== selectedUser.accountStatus) {
+                    await toggleUserStatus(selectedUser.id, formAccountStatus as any);
+                  }
+
+                  alert('Utilisateur mis à jour');
+                  setShowEditModal(false);
+                  setSelectedUser(null);
+                  fetchUsers(currentPage);
+                }
+              } catch (err) {
+                console.error('Save user failed', err);
+                const e: any = err;
+                const detail = e?.response?.data?.message || e?.response?.data?.detail || e?.message || 'Échec lors de l\'enregistrement utilisateur';
+                setFormError(String(detail));
+              } finally {
+                setIsSubmitting(false);
+              }
+            }}
+            className="bg-white rounded-lg p-6 w-full max-w-md"
+          >
             <h3 className="text-xl font-bold text-slate-900 mb-4">
-              {showCreateModal ? 'Créer un novo conta' : 'Modifier l\'utilisateur'}
+              {showCreateModal ? 'Créer un compte' : 'Modifier l\'utilisateur'}
             </h3>
-            <p className="text-slate-600 mb-6">Formulaire de gestion utilisateurs (Intégration API backend requis)</p>
-            <div className="flex gap-3">
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm text-slate-700 mb-1">Nom complet</label>
+                <input
+                  value={formFullName}
+                  onChange={(e) => setFormFullName(e.target.value)}
+                  required
+                  className="w-full px-3 py-2 border rounded-lg"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-slate-700 mb-1">Email</label>
+                <input
+                  value={formEmail}
+                  onChange={(e) => setFormEmail(e.target.value)}
+                  type="email"
+                  required
+                  className="w-full px-3 py-2 border rounded-lg"
+                />
+              </div>
+              {showCreateModal && (
+                <div>
+                  <label className="block text-sm text-slate-700 mb-1">Mot de passe</label>
+                  <input
+                    value={formPassword}
+                    onChange={(e) => setFormPassword(e.target.value)}
+                    type="password"
+                    required
+                    className="w-full px-3 py-2 border rounded-lg"
+                  />
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm text-slate-700 mb-1">Rôle</label>
+                <select
+                  value={formRole}
+                  onChange={(e) => setFormRole(e.target.value as any)}
+                  disabled={isSubmitting}
+                  className="w-full px-3 py-2 border rounded-lg"
+                >
+                  <option value="user">Utilisateur</option>
+                  <option value="admin">Admin</option>
+                  <option value="support">Support</option>
+                  <option value="gestionnaire-technique">Gestionnaire technique</option>
+                </select>
+              </div>
+
+              {!showCreateModal && (
+                <div>
+                  <label className="block text-sm text-slate-700 mb-1">Statut du compte</label>
+                  <select
+                    value={formAccountStatus}
+                      onChange={(e) => setFormAccountStatus(e.target.value as any)}
+                      disabled={isSubmitting}
+                    className="w-full px-3 py-2 border rounded-lg"
+                  >
+                    <option value="active">Actif</option>
+                    <option value="inactive">Inactif</option>
+                    <option value="suspended">Suspendu</option>
+                  </select>
+                </div>
+              )}
+            </div>
+
+              {formError && (
+                <div className="text-sm text-red-600 mb-3">{formError}</div>
+              )}
+
+              <div className="flex gap-3 mt-6">
               <button
+                type="button"
                 onClick={() => {
                   setShowCreateModal(false);
                   setShowEditModal(false);
@@ -560,10 +723,24 @@ export default function AdminUsersDashboard() {
                 }}
                 className="flex-1 px-4 py-2 bg-slate-200 text-slate-900 rounded-lg hover:bg-slate-300 transition-colors"
               >
-                Fermer
+                Annuler
+              </button>
+              <button
+                type="submit"
+                  className={`flex-1 px-4 py-2 rounded-lg transition-colors ${isSubmitting ? 'bg-red-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700 text-white'}`}
+                  disabled={isSubmitting}
+              >
+                Enregistrer
               </button>
             </div>
-          </div>
+          </form>
+        </div>
+      )}
+      {/* Dev action result (visible on localhost only) */}
+      {window.location.hostname === 'localhost' && (
+        <div className="fixed bottom-4 right-4 bg-white border p-3 rounded shadow-md text-sm z-50 w-80">
+          <div className="font-semibold text-slate-700 mb-1">Dernière action</div>
+          <div className="text-slate-600">{lastActionResult || 'Aucune'}</div>
         </div>
       )}
     </div>

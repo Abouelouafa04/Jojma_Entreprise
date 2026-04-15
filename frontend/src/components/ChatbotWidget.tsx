@@ -111,10 +111,16 @@ export default function ChatbotWidget() {
     try {
       const sessionId = getOrCreateSessionId();
 
-      const response = await fetch("/api/chat", {
-        method: "POST",
+      const apiBase =
+        (import.meta.env.VITE_API_BASE_URL as string) ||
+        (import.meta.env.VITE_API_URL as string) ||
+        '/api';
+      const endpoint = `${apiBase.replace(/\/$/, '')}/chat`;
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           message: text,
@@ -124,13 +130,25 @@ export default function ChatbotWidget() {
         }),
       });
 
-      const data = await response.json();
-
-      if (!response.ok || !data.success) {
-        throw new Error(data?.error || "Erreur chatbot");
+      if (!response.ok) {
+        const txt = await response.text().catch(() => '');
+        throw new Error(`API ${response.status}: ${txt || response.statusText}`);
       }
 
-      addBotMessage(data.reply || t("chatbot.default_a"));
+      const contentType = response.headers.get('content-type') || '';
+      let data: any;
+      if (contentType.includes('application/json')) {
+        data = await response.json();
+      } else {
+        const txt = await response.text().catch(() => '');
+        throw new Error(`API ${response.status}: ${txt || 'Non-JSON response'}`);
+      }
+
+      if (!data?.success) {
+        throw new Error(data?.error || 'Erreur chatbot');
+      }
+
+      addBotMessage(data.reply || t('chatbot.default_a'));
     } catch (error) {
       console.error("Chatbot error:", error);
       addBotMessage(

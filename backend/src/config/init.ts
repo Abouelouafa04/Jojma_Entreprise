@@ -1,6 +1,7 @@
 import SubscriptionPlan from '../modules/users/plan.model';
 import User from '../modules/users/user.model';
 import EmailVerificationToken from '../modules/users/emailVerificationToken.model';
+import PasswordResetToken from '../modules/users/passwordResetToken.model';
 import { ContactRequest } from '../modules/contact/contact.model';
 
 // Define associations
@@ -12,6 +13,17 @@ EmailVerificationToken.belongsTo(User, {
 User.hasMany(EmailVerificationToken, {
   foreignKey: 'userId',
   as: 'emailVerificationTokens'
+});
+
+// Password reset tokens
+PasswordResetToken.belongsTo(User, {
+  foreignKey: 'userId',
+  as: 'user'
+});
+
+User.hasMany(PasswordResetToken, {
+  foreignKey: 'userId',
+  as: 'passwordResetTokens'
 });
 
 export const seedDatabase = async () => {

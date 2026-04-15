@@ -6,9 +6,9 @@ import axios from 'axios';
  */
 const DEFAULT_BACKEND_ORIGIN = `${window.location.protocol}//${window.location.hostname}:5000`;
 const api = axios.create({
-  // We keep "/api/..." in request paths and rely on Vite proxy in dev.
-  // If VITE_API_URL is provided, it should be the full backend base (e.g. "http://localhost:5000").
-  baseURL: import.meta.env.VITE_API_URL || '',
+  // Default to '/api' so Vite proxy routes to http://127.0.0.1:5000 in dev.
+  // VITE_API_URL overrides this (e.g. "http://localhost:5000/api" for direct calls).
+  baseURL: import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || '/api',
   timeout: 15000,
   headers: {
     'Content-Type': 'application/json',
@@ -23,6 +23,49 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
+
+// Global response interceptor: handle auth issues (deleted user, invalid token)
+api.interceptors.response.use(
+  (response) => response,
+  (error: any) => {
+    const status = error?.response?.status;
+    const errData = error?.response?.data || {};
+    const code = errData?.code;
+    const message = errData?.message || errData?.detail || error?.message || '';
+
+    // If backend indicates the user no longer exists, clear local session and redirect to login
+    if (
+      status === 401 &&
+      (code === 'USER_NOT_FOUND' || /n['’]existe plus/i.test(String(message)))
+    ) {
+      const token = localStorage.getItem('jojma_token');
+      try {
+        if (token) {
+          // best-effort server logout to clear cookies
+          fetch('/api/auth/logout', {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          }).catch(() => {});
+        }
+      } catch (e) {
+        // ignore
+      }
+
+      localStorage.removeItem('jojma_token');
+      localStorage.removeItem('jojma_user');
+
+      try {
+        window.alert("Votre session n'est plus valide : l'utilisateur lié au token n'existe plus. Vous allez être redirigé vers la page de connexion.");
+      } catch (e) {}
+      window.location.href = '/login';
+    }
+
+    return Promise.reject(error);
+  }
+);
 
 export default api;
 export const axiosInstance = api;
@@ -148,10 +191,31 @@ export async function createConversionJob(params: Convert3DFileParams): Promise<
     },
   });
 
-  const data = await response.json();
-  if (!response.ok || !data?.success) {
-    throw new Error(data?.error || `HTTP ${response.status}`);
+  const contentType = response.headers.get('content-type') || '';
+  let data: any = null;
+
+  if (contentType.includes('application/json')) {
+    try {
+      data = await response.json();
+    } catch (err) {
+      const txt = await response.text().catch(() => '');
+      console.error('[API] createConversionJob: failed to parse JSON', { url, err, txt });
+      throw new Error('Réponse du serveur invalide (JSON attendu).');
+    }
+  } else {
+    const txt = await response.text().catch(() => '');
+    console.error('[API] createConversionJob: non-JSON response', { url, txt });
+    data = { detail: txt };
   }
+
+  if (response.status === 401) {
+    throw new Error('Non autorisé — veuillez vous connecter.');
+  }
+
+  if (!response.ok || !data?.success) {
+    throw new Error(data?.error || data?.detail || `HTTP ${response.status}`);
+  }
+
   return data.job as ConversionJobDto;
 }
 
@@ -165,10 +229,31 @@ export async function listMyConversionJobs(): Promise<ConversionJobDto[]> {
         : {}),
     },
   });
-  const data = await response.json();
-  if (!response.ok || !data?.success) {
-    throw new Error(data?.error || `HTTP ${response.status}`);
+  const contentType = response.headers.get('content-type') || '';
+  let data: any = null;
+
+  if (contentType.includes('application/json')) {
+    try {
+      data = await response.json();
+    } catch (err) {
+      const txt = await response.text().catch(() => '');
+      console.error('[API] listMyConversionJobs: failed to parse JSON', { url, err, txt });
+      throw new Error('Réponse du serveur invalide (JSON attendu).');
+    }
+  } else {
+    const txt = await response.text().catch(() => '');
+    console.error('[API] listMyConversionJobs: non-JSON response', { url, txt });
+    data = { detail: txt };
   }
+
+  if (response.status === 401) {
+    throw new Error('Non autorisé — veuillez vous connecter.');
+  }
+
+  if (!response.ok || !data?.success) {
+    throw new Error(data?.error || data?.detail || `HTTP ${response.status}`);
+  }
+
   return (data.jobs || []) as ConversionJobDto[];
 }
 
@@ -183,11 +268,72 @@ export async function retryConversionJob(jobId: string): Promise<ConversionJobDt
         : {}),
     },
   });
-  const data = await response.json();
-  if (!response.ok || !data?.success) {
-    throw new Error(data?.error || `HTTP ${response.status}`);
+  const contentType = response.headers.get('content-type') || '';
+  let data: any = null;
+
+  if (contentType.includes('application/json')) {
+    try {
+      data = await response.json();
+    } catch (err) {
+      const txt = await response.text().catch(() => '');
+      console.error('[API] retryConversionJob: failed to parse JSON', { url, err, txt });
+      throw new Error('Réponse du serveur invalide (JSON attendu).');
+    }
+  } else {
+    const txt = await response.text().catch(() => '');
+    console.error('[API] retryConversionJob: non-JSON response', { url, txt });
+    data = { detail: txt };
   }
+
+  if (response.status === 401) {
+    throw new Error('Non autorisé — veuillez vous connecter.');
+  }
+
+  if (!response.ok || !data?.success) {
+    throw new Error(data?.error || data?.detail || `HTTP ${response.status}`);
+  }
+
   return data.job as ConversionJobDto;
+}
+
+export async function deleteConversionJob(jobId: string): Promise<void> {
+  const url = `${getApiBaseUrl()}/jobs/${jobId}`;
+  const response = await fetch(url, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(localStorage.getItem('jojma_token')
+        ? { Authorization: `Bearer ${localStorage.getItem('jojma_token')}` }
+        : {}),
+    },
+  });
+
+  const contentType = response.headers.get('content-type') || '';
+  let data: any = null;
+
+  if (contentType.includes('application/json')) {
+    try {
+      data = await response.json();
+    } catch (err) {
+      const txt = await response.text().catch(() => '');
+      console.error('[API] deleteConversionJob: failed to parse JSON', { url, err, txt });
+      throw new Error('Réponse du serveur invalide (JSON attendu).');
+    }
+  } else {
+    const txt = await response.text().catch(() => '');
+    console.error('[API] deleteConversionJob: non-JSON response', { url, txt });
+    data = { detail: txt };
+  }
+
+  if (response.status === 401) {
+    throw new Error('Non autorisé — veuillez vous connecter.');
+  }
+
+  if (!response.ok || !data?.success) {
+    throw new Error(data?.error || data?.detail || `HTTP ${response.status}`);
+  }
+
+  return;
 }
 
 export function getFileUrl(relativePath: string): string {

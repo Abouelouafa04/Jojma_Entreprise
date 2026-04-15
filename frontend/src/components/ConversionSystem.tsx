@@ -7,7 +7,7 @@ import {
   createConversionJob,
 } from "../api/api";
 import "../styles/conversion.css";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 const FORMATS: string[] = [
   "STL",
@@ -20,11 +20,12 @@ const FORMATS: string[] = [
   "ABC",
 ];
 
-export default function ConversionSystem() {
+export default function ConversionSystem({ redirectToPipeline = true }: { redirectToPipeline?: boolean }) {
   const [sourceFormat, setSourceFormat] = useState<string>("STL");
   const [targetFormat, setTargetFormat] = useState<string>("GLB");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [convertedFile, setConvertedFile] = useState<Convert3DFileResponse | null>(null);
+  const [jobCreatedId, setJobCreatedId] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>("");
 
@@ -90,20 +91,22 @@ export default function ConversionSystem() {
           sourceFormat,
           targetFormat,
         });
-
-        // Redirect to pipeline and focus the new job.
-        navigate(`/dashboard/conversions?job=${encodeURIComponent(job.id)}`);
-        return;
+          // Store created job id for optional UI (no automatic redirect if disabled)
+          setJobCreatedId(job.id);
+          // Redirect to pipeline and focus the new job only when enabled
+          if (redirectToPipeline) {
+            navigate(`/dashboard/conversions?job=${encodeURIComponent(job.id)}`);
+            return;
+          }
       }
 
       // Public fallback: immediate conversion (no pipeline tracking)
       const result = await convert3DFile({ file: selectedFile, sourceFormat, targetFormat });
       setConvertedFile(result);
-
-      // Even in public mode, send user to the pipeline screen.
-      // If the user is not authenticated, ProtectedRoute will redirect to /login
-      // and then bring them back to the pipeline after login.
-      navigate('/dashboard/conversions');
+      // Redirect to pipeline only when explicitly allowed
+      if (redirectToPipeline) {
+        navigate('/dashboard/conversions');
+      }
     } catch (error) {
       if (error instanceof Error) {
         setErrorMessage(error.message);
@@ -224,6 +227,11 @@ export default function ConversionSystem() {
                   >
                     Télécharger le fichier converti
                   </a>
+                )}
+                {jobCreatedId && (
+                  <div className="text-sm mt-2">
+                    Conversion envoyée au pipeline. <Link to={`/dashboard/conversions?job=${encodeURIComponent(jobCreatedId)}`} className="text-indigo-600 underline">Voir le job</Link>
+                  </div>
                 )}
               </div>
             </div>

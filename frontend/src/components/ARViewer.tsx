@@ -35,14 +35,19 @@ export default function ARViewer({ src, isUSDZ }: ARViewerProps) {
   return (
     <div className="w-full h-[400px] md:h-[450px] bg-[#1a3170]/40 rounded-[1.5rem] border border-indigo-400/20 overflow-hidden shadow-inner relative">
       {/* @ts-ignore */}
-      <model-viewer
-        src={src}
-        alt="Aperçu interactif du modèle 3D"
-        auto-rotate
-        camera-controls
-        shadow-intensity="1"
-        style={{ width: '100%', height: '100%', backgroundColor: 'transparent' }}
-      ></model-viewer>
+      {src ? (
+        // @ts-ignore
+        <model-viewer
+          src={src}
+          alt="Aperçu interactif du modèle 3D"
+          auto-rotate
+          camera-controls
+          shadow-intensity="1"
+          style={{ width: '100%', height: '100%', backgroundColor: 'transparent' }}
+        ></model-viewer>
+      ) : (
+        <div className="w-full h-full flex items-center justify-center text-slate-400 p-6">Aucun modèle disponible</div>
+      )}
     </div>
   );
 }

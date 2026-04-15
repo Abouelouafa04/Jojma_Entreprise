@@ -1,0 +1,76 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+enum TypeDemande {
+  PROJET_3D @map("projet_3d")
+  CONTACT   @map("contact")
+  AUTRE     @map("autre")
+}
+
+enum Statut {
+  NOUVEAU    @map("nouveau")
+  LU         @map("lu")
+  EN_COURS   @map("en_cours")
+  EN_ATTENTE @map("en_attente")
+  TRAITE     @map("traite")
+  ARCHIVE    @map("archive")
+  REJETE     @map("rejete")
+}
+
+enum Priorite {
+  BASSE   @map("basse")
+  NORMALE @map("normale")
+  HAUTE   @map("haute")
+  URGENTE @map("urgente")
+}
+
+model Demande {
+  id               BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  type_demande     TypeDemande
+  source_formulaire String?  @db.VarChar(100)
+  nom              String?   @db.VarChar(100)
+  prenom           String?   @db.VarChar(100)
+  email            String?   @db.VarChar(150)
+  telephone        String?   @db.VarChar(50)
+  adresse          String?   @db.VarChar(255)
+  entreprise       String?   @db.VarChar(150)
+  domaine_activite String?   @db.VarChar(150)
+  sujet            String?   @db.VarChar(255)
+  message          String?   @db.Text
+  statut           Statut    @default(NOUVEAU)
+  priorite         Priorite  @default(NORMALE)
+  est_lu           Boolean   @default(false)
+  assigne_a        BigInt?   @db.UnsignedBigInt
+  admin_notes      String?   @db.Text
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @updatedAt
+  archived_at      DateTime?
+
+  logs             DemandeLog[] @relation("DemandeLogs")
+
+  @@map("demandes")
+  @@index([statut], name: "idx_statut")
+  @@index([priorite], name: "idx_priorite")
+  @@index([created_at], name: "idx_created_at")
+  @@index([est_lu], name: "idx_est_lu")
+  @@index([assigne_a], name: "idx_assigne_a")
+  @@index([email], name: "idx_email")
+}
+
+model DemandeLog {
+  id         BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  demande    Demande  @relation(fields: [demande_id], references: [id], name: "DemandeLogs")
+  demande_id BigInt   @db.UnsignedBigInt
+  admin_id   BigInt?  @db.UnsignedBigInt
+  action_type String  @db.VarChar(50)
+  description String? @db.Text
+  meta       Json?
+  created_at DateTime @default(now())
+
+  @@map("demande_logs")
+}
