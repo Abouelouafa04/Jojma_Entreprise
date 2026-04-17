@@ -10,17 +10,19 @@ type ExperienceResponse = {
       slug: string;
       qrCodeData: string;
       viewsCount: number;
-      Model3D?: any;
+      // Primary model object (optional)
+      Model3D?: {
+        id: string;
+        name: string;
+        convertedFileName?: string | null;
+        publicFileUrl?: string | null;
+      } | null;
+      // Backwards-compatible aliases (kept as loose types)
       model3d?: any;
       Model?: any;
       model?: any;
       Model3DModel?: any;
       modelId?: string;
-      Model3D: {
-        id: string;
-        name: string;
-        convertedFileName?: string | null;
-      };
     };
   };
 };

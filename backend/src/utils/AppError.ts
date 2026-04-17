@@ -11,6 +11,22 @@ export class AppError extends Error {
 
     Error.captureStackTrace(this, this.constructor);
   }
+
+  // Low-risk helper to normalise errors for controllers/middlewares
+  static handle(error: unknown) {
+    if (error instanceof AppError) {
+      return {
+        message: error.message,
+        statusCode: error.statusCode,
+        code: error.code,
+        isOperational: error.isOperational
+      };
+    }
+    if (error instanceof Error) {
+      return { message: error.message };
+    }
+    return { message: 'Unknown error' };
+  }
 }
 
 export default AppError;

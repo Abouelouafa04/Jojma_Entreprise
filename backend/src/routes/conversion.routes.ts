@@ -235,8 +235,8 @@ async function handleConversion(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    const result = await pythonResponse.json();
-    
+    const result: any = await pythonResponse.json();
+
     console.log(`[Conversion] Succès (${userId}): ${result.filename}`);
 
     res.json({

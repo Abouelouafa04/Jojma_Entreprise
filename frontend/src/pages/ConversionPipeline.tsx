@@ -47,7 +47,7 @@ const STATUS_MAP: Record<string, { className: string; icon: any; label: string }
   failed: { className: 'bg-rose-100 text-rose-700', icon: AlertTriangle, label: 'Échoué' },
 };
 
-function MetricCard({ label, value, Icon, meta }) {
+function MetricCard({ label, value, Icon, meta }: any) {
   return (
     <div className="rounded-2xl bg-white border border-slate-100 p-5 shadow-sm hover:shadow-md transition">
       <div className="flex items-center justify-between">
@@ -258,7 +258,7 @@ export default function ConversionPipeline() {
           {loading && <div className="text-sm text-slate-500">Chargement du pipeline...</div>}
           {error && <div className="text-sm text-rose-700 bg-rose-50 border border-rose-100 rounded-lg p-3 mb-4">{error}</div>}
           {Object.keys(groups).length === 0 && <div className="text-sm text-slate-500">Aucun résultat.</div>}
-          {Object.entries(groups).map(([group, items]) => (
+          {Object.entries(groups).map(([group, items]: [string, any[]]) => (
             <div key={group} className="mb-6">
               <h3 className="text-sm font-semibold text-slate-600 mb-3">{group} · {items.length} tâches</h3>
               <div className="space-y-4">

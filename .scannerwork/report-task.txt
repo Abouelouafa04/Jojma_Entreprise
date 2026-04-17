@@ -1,6 +1,6 @@
-projectKey=jojma-entreprise
+projectKey=JOJMA_ENTREPRISE
 serverUrl=http://localhost:9000
 serverVersion=26.1.0.118079
-dashboardUrl=http://localhost:9000/dashboard?id=jojma-entreprise
-ceTaskId=8efbf95c-a3d3-4a78-b2a5-11216ba79068
-ceTaskUrl=http://localhost:9000/api/ce/task?id=8efbf95c-a3d3-4a78-b2a5-11216ba79068
+dashboardUrl=http://localhost:9000/dashboard?id=JOJMA_ENTREPRISE
+ceTaskId=6a42d43f-1bfd-4eeb-b98b-9d18c68feef0
+ceTaskUrl=http://localhost:9000/api/ce/task?id=6a42d43f-1bfd-4eeb-b98b-9d18c68feef0

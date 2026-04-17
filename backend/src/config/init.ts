@@ -2,7 +2,7 @@ import SubscriptionPlan from '../modules/users/plan.model';
 import User from '../modules/users/user.model';
 import EmailVerificationToken from '../modules/users/emailVerificationToken.model';
 import PasswordResetToken from '../modules/users/passwordResetToken.model';
-import { ContactRequest } from '../modules/contact/contact.model';
+// ContactRequest import removed — unused in this module
 
 // Define associations
 EmailVerificationToken.belongsTo(User, {

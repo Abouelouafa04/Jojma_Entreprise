@@ -105,7 +105,7 @@ export const getTicketById = async (req: Request, res: Response) => {
 export const createTicket = async (req: Request, res: Response) => {
   try {
     const { subject, description, category, priority = 'normal' } = req.body;
-    const userId = req.user?.id;
+    const userId = (req as any).user?.id;
 
     if (!subject || !description || !category) {
       throw new AppError('Missing required fields', 400);
@@ -360,7 +360,7 @@ export const addMessageToTicket = async (req: Request, res: Response) => {
   try {
     const { ticketId } = req.params;
     const { message } = req.body;
-    const senderName = req.user?.name || 'Support Agent';
+    const senderName = (req as any).user?.name || 'Support Agent';
 
     if (!message) {
       throw new AppError('Message is required', 400);

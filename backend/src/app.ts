@@ -16,9 +16,6 @@ import conversionRouter from './routes/conversion.routes';
 import arRouter from './routes/ar.routes';
 import arLibraryRouter from './routes/ar-library.routes';
 import arGenerationRouter from './routes/ar-generation.routes';
-import conversionRouter from './routes/conversion.routes';
-import arRouter from './routes/ar.routes.js';
-import arLibraryRouter from './routes/ar-library.routes';
 
 // Compute a reliable app directory without using `import.meta`
 // (avoids SyntaxError under CommonJS/Jest where `import.meta` is invalid).
